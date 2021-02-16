@@ -106,27 +106,49 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+
+  #list to hold data
+  data = []
+
+  #Get each distinct city in the database
+  cities = Venue.query.distinct('city', 'state').all()
+  print("Cities")
+  print(cities)
+
+
+  for each_city in cities:
+
+
+      #Get all venues in the city in the database
+      venues = Venue.query.filter(Venue.city == each_city.city, Venue.state == each_city.state).all()
+      print("Venues")
+      print(venues)
+
+      #List to store venue records for each city
+      city_venue_records = []
+
+      #Inner for loop to record data for each venue in each city
+      for each_venue in venues:
+          #Find number of upcoming shows by querying shows and finding which ones happen after current time
+          future_shows = Show.query.filter(Show.venue_id == each_venue.id, Show.start_time > datetime.now()).count()
+          print(future_shows)
+
+          venue_record = {
+            "id": each_venue.id,
+            "name": each_venue.name,
+            "num_upcoming_shows": future_shows
+          }
+
+          city_venue_records.append(venue_record)
+
+      city_record = {
+        "city": each_city.city,
+        "state": each_city.state,
+        "venues": city_venue_records
+      }
+
+      data.append(city_record)
+
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
@@ -292,16 +314,19 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   # TODO: replace with real data returned from querying the database
-  data=[{
-    "id": 4,
-    "name": "Guns N Petals",
-  }, {
-    "id": 5,
-    "name": "Matt Quevedo",
-  }, {
-    "id": 6,
-    "name": "The Wild Sax Band",
-  }]
+  #Get artists from db
+  all_artists = Artist.query.all()
+
+  #List to store data
+  data = []
+
+  #Build records for list
+  for each_artist in all_artists:
+      artist_data = {
+      "id": each_artist.id,
+      "name": each_artist.name
+      }
+      data.append(artist_data)
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
